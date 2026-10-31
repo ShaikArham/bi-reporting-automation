@@ -1,0 +1,16 @@
+name: Verify reporting pipeline
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -v
+      - run: python scripts/generate_data.py
+      - run: python scripts/run_pipeline.py --synthetic
+      - run: git diff --exit-code -- data/ outputs/ site/data.js site/downloads/

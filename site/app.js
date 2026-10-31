@@ -1,0 +1,16 @@
+'use strict';
+(()=>{
+const D=window.REPORT_DATA,$=id=>document.getElementById(id),escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const eur=n=>new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR'}).format(n/100);
+$('run-status').textContent=D.status+' / BATCH COMPLETE';$('asof').textContent='AS OF '+D.as_of+' · STATIC SNAPSHOT';
+$('notice').textContent=`${D.synthetic?'Fictional demonstration. ':''}${D.rejected_rows} of ${D.input_rows} order rows quarantined (${(100*D.rejection_rate).toFixed(2)}%). The run passed its ${(100*D.max_reject_rate).toFixed(0)}% rejection threshold. Review exceptions before using the report.`;
+$('stages').innerHTML=D.stages.map((s,i)=>`<article class="stage"><span class="step">STEP ${String(i+1).padStart(2,'0')}</span><strong>${escape(s.name)}</strong><span class="status ${s.status==='WARN'?'warn':''}">${escape(s.status)}</span><small>${escape(s.detail)}</small></article>`).join('');
+for(const [id,val] of [['input',D.input_rows],['accepted',D.accepted_rows],['rejected',D.rejected_rows]])$(id).textContent=val;
+$('revenue').textContent=eur(D.net_cents);$('reject-rate').textContent=(100*D.rejection_rate).toFixed(2)+'% of source rows';$('eligible').textContent=D.eligible_orders+' eligible completed orders';
+for(const [id,items] of [['month',D.monthly.map(m=>m.month)],['reason',Object.keys(D.reasons)]])for(const value of items){const o=document.createElement('option');o.value=value;o.textContent=value;$(id).append(o);}
+function renderMonths(){const rows=D.monthly.filter(m=>!$('month').value||m.month===$('month').value);$('monthly').innerHTML=rows.map(m=>`<tr><td>${escape(m.month)}</td><td>${m.orders}</td><td>${eur(m.gross_cents)}</td><td>${eur(m.refund_cents)}</td><td>${eur(m.net_cents)}</td><td><span class="status">MATCHED</span></td></tr>`).join('');$('month-status').textContent=`${rows.length} report rows · ${eur(rows.reduce((n,m)=>n+m.net_cents,0))} net sales. CSV downloads contain the full report.`;}
+function renderErrors(){const rows=D.exceptions.filter(r=>!$('reason').value||r.reason===$('reason').value);$('errors').innerHTML=rows.length?rows.map(r=>`<tr><td>${r.source_line}</td><td>${escape(r.order_id)}</td><td>${escape(r.reason)}</td></tr>`).join(''):'<tr><td colspan="3">No quarantined rows.</td></tr>';$('error-status').textContent=`${rows.length} of ${D.rejected_rows} rejected source rows shown.`;}
+$('checks').innerHTML=[['Source accounting',`${D.input_rows} = ${D.accepted_rows} accepted + ${D.rejected_rows} rejected`],['Report eligibility',`${D.accepted_rows} = ${D.eligible_orders} report orders + ${D.excluded_accepted_rows} cancelled / zero-net`],['Revenue control',`${D.net_cents} net cents = SQL total = Python total`]].map(([name,detail])=>`<div class="check"><strong>✓ ${name}</strong><code>${escape(detail)}</code></div>`).join('');
+$('hashes').innerHTML=Object.entries({...D.source_sha256,'monthly_sales.sql':D.sql_sha256}).map(([name,hash])=>`<dt>${escape(name)}</dt><dd>${escape(hash)}</dd>`).join('');
+$('month').addEventListener('change',renderMonths);$('reason').addEventListener('change',renderErrors);renderMonths();renderErrors();
+})();
