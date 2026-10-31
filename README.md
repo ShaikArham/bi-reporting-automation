@@ -4,6 +4,8 @@ A reproducible CSV-to-SQLite reporting pipeline with validation, quarantine, SQL
 
 **Fictional data only.** Built as a new portfolio implementation in October 2026. This project does not contain Hitachi code, employer data, Oracle connections or retrospective claims of business savings.
 
+[Open the live Report Relay console](https://shaikarham.github.io/bi-reporting-automation/site/)
+
 ## Run
 
 Python 3.12 or later, no third-party Python dependencies:
